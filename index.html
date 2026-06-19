@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PROFEL® — Editorial</title>
+<style>
+  /* ----- Design tokens (from Figma selection colors) ----- */
+  :root{
+    --blue:#1C4AE5;
+    --black:#000000;
+    --white:#FFFFFF;
+    --gray:#d4d4d4;
+    --gray-2:#bdbdbd;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+
+  html,body{height:100%;}
+
+  body{
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    background:var(--white);
+    color:var(--black);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* =========================================================
+     LOADING SCREEN
+     ========================================================= */
+  .loader{
+    position:fixed;
+    inset:0;
+    z-index:1000;
+    background:var(--white);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2rem;
+    transition:transform .9s var(--ease);
+  }
+  .loader.is-done{ transform:translateY(-101%); }
+
+  .loader__logo{
+    font-family:"Arial Black","Helvetica Neue",Arial,sans-serif;
+    font-weight:900;
+    font-size:clamp(2.2rem,7vw,4.5rem);
+    letter-spacing:-.03em;
+    color:var(--black);
+    line-height:1;
+  }
+  .loader__logo sup{ font-size:.32em; vertical-align:super; }
+
+  .loader__track{
+    position:relative;
+    width:min(420px,70vw);
+    height:3px;
+    background:#e7e7e7;
+    overflow:hidden;
+  }
+  .loader__bar{
+    position:absolute;
+    inset:0 auto 0 0;
+    width:0%;
+    background:var(--blue);
+  }
+  .loader__count{
+    font-size:.8rem;
+    font-weight:700;
+    letter-spacing:.12em;
+    color:var(--black);
+  }
+
+  /* =========================================================
+     HEADER / NAV
+     ========================================================= */
+  .site{ opacity:0; transition:opacity .5s ease .2s; }
+  .site.is-ready{ opacity:1; }
+
+  .header{
+    position:absolute;
+    top:0; left:0; right:0;
+    z-index:20;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:1.6rem clamp(1.25rem,4vw,3rem);
+  }
+  .logo{
+    font-family:"Arial Black","Helvetica Neue",Arial,sans-serif;
+    font-weight:900;
+    font-size:clamp(1.1rem,2vw,1.5rem);
+    letter-spacing:-.02em;
+    text-decoration:none;
+    color:var(--black);
+  }
+  .logo sup{ font-size:.5em; }
+
+  .nav ul{ list-style:none; display:flex; gap:1.5rem; }
+  .nav a{
+    text-decoration:none;
+    color:var(--black);
+    font-size:.78rem;
+    font-weight:700;
+    letter-spacing:.08em;
+    padding-bottom:2px;
+    border-bottom:2px solid transparent;
+    transition:color .2s ease, border-color .2s ease;
+  }
+  .nav a:hover,
+  .nav a:focus-visible{
+    color:var(--blue);
+    border-bottom-color:var(--blue);
+    outline:none;
+  }
+
+  /* Hamburger toggle — hidden on desktop, shown on mobile */
+  .nav-toggle{
+    display:none;
+    flex-direction:column;
+    justify-content:center;
+    gap:5px;
+    width:36px; height:36px;
+    padding:0; border:0;
+    background:none;
+    cursor:pointer;
+    z-index:30;
+  }
+  .nav-toggle span{
+    display:block;
+    width:24px; height:2px;
+    background:var(--black);
+    transition:transform .3s var(--ease), opacity .2s ease;
+  }
+  .nav-toggle[aria-expanded="true"] span:nth-child(1){ transform:translateY(7px) rotate(45deg); }
+  .nav-toggle[aria-expanded="true"] span:nth-child(2){ opacity:0; }
+  .nav-toggle[aria-expanded="true"] span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); }
+  .nav-toggle:focus-visible{ outline:2px solid var(--blue); outline-offset:3px; }
+
+  /* =========================================================
+     MAIN STAGE
+     ========================================================= */
+  .stage{
+    position:relative;
+    min-height:100vh;
+    min-height:100dvh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:6rem clamp(1.25rem,4vw,3rem) 4rem;
+  }
+
+  /* Blue name stack */
+  .names{
+    list-style:none;
+    text-align:center;
+    width:100%;
+    position:relative;
+    z-index:5;
+  }
+  .names li{ line-height:.92; }
+  .name{
+    display:inline-block;
+    font-family:"Arial Black","Helvetica Neue",Arial,sans-serif;
+    font-weight:900;
+    font-size:clamp(2.4rem,7.4vw,6.6rem);
+    letter-spacing:-.02em;
+    color:var(--blue);
+    text-decoration:none;
+    cursor:pointer;
+    transition:opacity .25s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  /* Dim the rest of the list while one name is active, to focus the reveal */
+  .names.is-hovering .name{ opacity:.32; }
+  .names.is-hovering .name.is-active{ opacity:1; }
+  .name:focus-visible{ outline:3px solid var(--black); outline-offset:4px; }
+
+  /* Black annotation labels */
+  .label{
+    position:absolute;
+    z-index:10;
+    font-size:.72rem;
+    line-height:1.35;
+    letter-spacing:.04em;
+    color:var(--black);
+    max-width:11rem;
+  }
+  .label strong{ display:block; font-weight:800; letter-spacing:.06em; }
+  .label span{ font-weight:400; }
+
+  .label--judges{ top:32%; left:clamp(1.25rem,4vw,3rem); }
+  .label--memories{ top:32%; right:clamp(1.25rem,4vw,3rem); text-align:right; }
+  .label--brands{ bottom:14%; left:clamp(1.25rem,4vw,3rem); }
+  .label--different{ bottom:16%; right:clamp(1.25rem,4vw,3rem); text-align:right; font-weight:800; }
+
+  /* Bounce animation on the black labels */
+  @keyframes bounce{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-8px); }
+  }
+  .label{ animation:bounce 2.4s var(--ease) infinite; }
+  .label--judges{ animation-delay:0s; }
+  .label--memories{ animation-delay:.3s; }
+  .label--brands{ animation-delay:.6s; }
+  .label--different{ animation-delay:.9s; }
+
+  /* =========================================================
+     IMAGE REVEAL (centered, one per name)
+     ========================================================= */
+  .reveal{
+    position:fixed;
+    inset:0;
+    z-index:8;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+  }
+  .card{
+    position:absolute;
+    width:clamp(180px,18vw,260px);
+    aspect-ratio:3/4;
+    background:var(--gray) center/cover no-repeat;
+    opacity:0;
+    transform:translateY(18px) scale(.96);
+    transition:opacity .35s var(--ease), transform .35s var(--ease);
+    box-shadow:0 24px 50px rgba(0,0,0,.18);
+  }
+  .card::after{
+    content:attr(data-name);
+    position:absolute;
+    left:0; right:0; bottom:0;
+    padding:.6rem .7rem;
+    font-size:.62rem;
+    font-weight:800;
+    letter-spacing:.08em;
+    color:var(--black);
+    background:linear-gradient(transparent,rgba(255,255,255,.9));
+  }
+  .card.is-visible{
+    opacity:1;
+    transform:translateY(0) scale(1) rotate(var(--rot,0deg));
+  }
+  /* slight editorial rotations so each card feels distinct */
+  .card:nth-child(1){ --rot:-5deg; }
+  .card:nth-child(2){ --rot:3deg; }
+  .card:nth-child(3){ --rot:-2deg; }
+  .card:nth-child(4){ --rot:6deg; }
+  .card:nth-child(5){ --rot:-4deg; }
+  .card:nth-child(6){ --rot:2deg; }
+  .card:nth-child(7){ --rot:-3deg; }
+
+  /* =========================================================
+     SCROLL SECTION — intro + zoom parallax
+     (vanilla adaptation of the framer-motion ZoomParallax)
+     ========================================================= */
+  .scroller{ position:relative; background:var(--white); }
+
+  .pz-intro{
+    position:relative;
+    height:55vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:1rem;
+    text-align:center;
+  }
+  .pz-eyebrow{
+    font-size:.72rem;
+    font-weight:800;
+    letter-spacing:.18em;
+    color:var(--black);
+  }
+  .pz-heading{
+    font-family:"Arial Black","Helvetica Neue",Arial,sans-serif;
+    font-weight:900;
+    font-size:clamp(2.4rem,7vw,6rem);
+    letter-spacing:-.02em;
+    line-height:.9;
+    color:var(--blue);
+  }
+  .pz-hint{
+    font-size:.72rem;
+    font-weight:700;
+    letter-spacing:.12em;
+    color:var(--black);
+    opacity:.55;
+  }
+
+  /* Track gives the scroll distance; sticky stage holds the zoom */
+  .pz-track{ position:relative; height:300vh; }
+  .pz-sticky{
+    position:sticky;
+    top:0;
+    height:100vh;
+    height:100dvh;
+    overflow:hidden;
+  }
+  .pz-item{
+    position:absolute;
+    top:0; left:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    height:100%;
+    transform:scale(1);
+    will-change:transform;
+  }
+  .pz-frame{
+    position:relative;
+    height:25vh;
+    width:25vw;
+    background:var(--gray) center/cover no-repeat;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .pz-frame span{
+    font-size:.7rem;
+    font-weight:800;
+    letter-spacing:.1em;
+    color:var(--gray-2);
+  }
+  /* Per-image placement, mirrored from the React component */
+  .pz-item:nth-child(2) .pz-frame{ top:-30vh; left:5vw;     height:30vh; width:35vw; }
+  .pz-item:nth-child(3) .pz-frame{ top:-10vh; left:-25vw;   height:45vh; width:20vw; }
+  .pz-item:nth-child(4) .pz-frame{           left:27.5vw;   height:25vh; width:25vw; }
+  .pz-item:nth-child(5) .pz-frame{ top:27.5vh; left:5vw;    height:25vh; width:20vw; }
+  .pz-item:nth-child(6) .pz-frame{ top:27.5vh; left:-22.5vw;height:25vh; width:30vw; }
+  .pz-item:nth-child(7) .pz-frame{ top:22.5vh; left:25vw;   height:15vh; width:15vw; }
+
+  .pz-outro{
+    height:50vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .pz-outro p{
+    font-family:"Arial Black","Helvetica Neue",Arial,sans-serif;
+    font-weight:900;
+    font-size:clamp(1.2rem,3vw,2rem);
+    letter-spacing:-.01em;
+    color:var(--black);
+    text-align:center;
+  }
+
+  /* =========================================================
+     MOBILE
+     ========================================================= */
+  @media (max-width:720px){
+    .nav-toggle{ display:flex; }
+    .nav ul{
+      position:absolute;
+      top:calc(100% - .4rem);
+      right:clamp(1.25rem,4vw,3rem);
+      flex-direction:column;
+      gap:1.15rem;
+      min-width:180px;
+      padding:1.4rem 1.5rem;
+      background:var(--white);
+      border:2px solid var(--black);
+      box-shadow:0 18px 40px rgba(0,0,0,.14);
+      transform-origin:top right;
+      transform:translateY(-8px) scale(.96);
+      opacity:0;
+      visibility:hidden;
+      pointer-events:none;
+      transition:opacity .25s ease, transform .25s var(--ease), visibility .25s;
+    }
+    .nav.is-open ul{
+      opacity:1;
+      visibility:visible;
+      pointer-events:auto;
+      transform:translateY(0) scale(1);
+    }
+    .nav a{ font-size:.9rem; }
+    .stage{ padding:7rem 1.1rem 8rem; align-items:flex-start; }
+    .name{ font-size:clamp(2rem,9vw,3rem); }
+    .names li{ line-height:1; }
+
+    /* Reposition labels into corners that don't collide with the stack */
+    .label{ max-width:8rem; font-size:.6rem; animation-duration:2.8s; }
+    .label--judges{ top:5.2rem; left:1.1rem; }
+    .label--memories{ top:5.2rem; right:1.1rem; }
+    .label--brands{ bottom:2.4rem; left:1.1rem; }
+    .label--different{ bottom:2.4rem; right:1.1rem; }
+
+    .card{ width:min(60vw,240px); }
+
+    /* Parallax: enlarge default frame footprint so it reads on small screens */
+    .pz-frame{ height:20vh; width:55vw; }
+    .pz-item:nth-child(2) .pz-frame{ top:-26vh; left:8vw;   height:24vh; width:60vw; }
+    .pz-item:nth-child(3) .pz-frame{ top:-8vh;  left:-30vw; height:34vh; width:45vw; }
+    .pz-item:nth-child(4) .pz-frame{           left:32vw;   height:20vh; width:50vw; }
+    .pz-item:nth-child(5) .pz-frame{ top:26vh;  left:8vw;   height:20vh; width:45vw; }
+    .pz-item:nth-child(6) .pz-frame{ top:26vh;  left:-28vw; height:20vh; width:55vw; }
+    .pz-item:nth-child(7) .pz-frame{ top:22vh;  left:30vw;  height:14vh; width:35vw; }
+  }
+
+  /* =========================================================
+     ACCESSIBILITY: reduced motion
+     ========================================================= */
+  @media (prefers-reduced-motion:reduce){
+    *{ animation:none !important; }
+    .loader{ transition:transform .3s ease; }
+    .card{ transition:opacity .2s ease; }
+    .card.is-visible{ transform:rotate(var(--rot,0deg)); }
+  }
+</style>
+</head>
+<body>
+
+  <!-- LOADING SCREEN -->
+  <div class="loader" id="loader" role="status" aria-live="polite" aria-label="Loading">
+    <div class="loader__logo">PROFEL<sup>®</sup></div>
+    <div class="loader__track"><div class="loader__bar" id="bar"></div></div>
+    <div class="loader__count" id="count">0%</div>
+  </div>
+
+  <!-- SITE -->
+  <div class="site" id="site">
+    <header class="header">
+      <a class="logo" href="#">PROFEL<sup>®</sup></a>
+      <nav class="nav" id="nav" aria-label="Primary">
+        <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
+        <ul id="navMenu">
+          <li><a href="#work">WORK</a></li>
+          <li><a href="#services">SERVICES</a></li>
+          <li><a href="#about">ABOUT</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="stage">
+      <!-- Annotation labels -->
+      <aside class="label label--judges">
+        <strong>JUNE 19</strong>
+        <strong>JUDGES</strong>
+      </aside>
+      <aside class="label label--memories">
+        <strong>MEMORIES</strong>
+        <span>LIGHT MODE PROFILE</span>
+      </aside>
+      <aside class="label label--brands">
+        <strong>TWENTY SEVEN BRANDS</strong>
+        <span>WIDE VARIETY OF PEOPLE WITH SKILLS</span>
+      </aside>
+      <aside class="label label--different">
+        WE ARE<br />DIFFERENT! WE<br />STAND OUT!
+      </aside>
+
+      <!-- Blue name stack -->
+      <ul class="names" id="names">
+        <li><a class="name" data-index="0" href="#">MICHAEL JORDAN</a></li>
+        <li><a class="name" data-index="1" href="#">RACHAEL ROW</a></li>
+        <li><a class="name" data-index="2" href="#">EMMANUEL PHILIP</a></li>
+        <li><a class="name" data-index="3" href="#">OCHE RHOLLAND</a></li>
+        <li><a class="name" data-index="4" href="#">EMILI PETER</a></li>
+        <li><a class="name" data-index="5" href="#">JAMES ED</a></li>
+        <li><a class="name" data-index="6" href="#">OBI THOMPSON</a></li>
+      </ul>
+
+      <!-- Centered image reveal: one placeholder per name -->
+      <div class="reveal" id="reveal" aria-hidden="true">
+        <figure class="card" data-name="MICHAEL JORDAN" style="background-image:url('Img/1.jpg')"></figure>
+        <figure class="card" data-name="RACHAEL ROW" style="background-image:url('Img/2.jpg')"></figure>
+        <figure class="card" data-name="EMMANUEL PHILIP" style="background-image:url('Img/3.jpg')"></figure>
+        <figure class="card" data-name="OCHE RHOLLAND" style="background-image:url('Img/4.jpg')"></figure>
+        <figure class="card" data-name="EMILI PETER" style="background-image:url('Img/5.jpg')"></figure>
+        <figure class="card" data-name="JAMES ED" style="background-image:url('Img/6.jpg')"></figure>
+        <figure class="card" data-name="OBI THOMPSON" style="background-image:url('Img/7.jpg')"></figure>
+      </div>
+    </main>
+
+    <!-- SCROLL SECTION: zoom parallax -->
+    <section class="scroller" aria-label="Editorial gallery">
+      <div class="pz-intro">
+        <p class="pz-eyebrow">LIGHT MODE PROFILE — JUNE 19</p>
+        <h2 class="pz-heading">THE COLLECTIVE</h2>
+        <p class="pz-hint">SCROLL TO ENTER</p>
+      </div>
+
+      <div class="pz-track" id="pzTrack">
+        <div class="pz-sticky">
+          <div class="pz-item"><figure class="pz-frame" style="background-image:url('Img/1.1.jpg')"></figure></div>
+          <div class="pz-item"><figure class="pz-frame" style="background-image:url('Img/2.1.jpg')"></figure></div>
+          <div class="pz-item"><figure class="pz-frame" style="background-image:url('Img/3.1.jpg')"></figure></div>
+          <div class="pz-item"><figure class="pz-frame" style="background-image:url('Img/4.1.jpg')"></figure></div>
+          <div class="pz-item"><figure class="pz-frame" style="background-image:url('Img/5.1.jpg')"></figure></div>
+          <div class="pz-item"><figure class="pz-frame" style="background-image:url('Img/6.1.jpg')"></figure></div>
+          <div class="pz-item"><figure class="pz-frame" style="background-image:url('Img/7.1.jpg')"></figure></div>
+        </div>
+      </div>
+
+      <div class="pz-outro">
+        <p>PROFEL® — WE ARE DIFFERENT! WE STAND OUT!</p>
+      </div>
+    </section>
+  </div>
+
+<script>
+  /* ---------- Loading screen ---------- */
+  (function(){
+    const loader = document.getElementById('loader');
+    const bar    = document.getElementById('bar');
+    const count  = document.getElementById('count');
+    const site   = document.getElementById('site');
+    let pct = 0;
+
+    const tick = setInterval(() => {
+      pct += Math.random() * 14 + 4;
+      if (pct >= 100){ pct = 100; clearInterval(tick); finish(); }
+      bar.style.width = pct + '%';
+      count.textContent = Math.floor(pct) + '%';
+    }, 140);
+
+    function finish(){
+      setTimeout(() => {
+        loader.classList.add('is-done');
+        site.classList.add('is-ready');
+      }, 450);
+    }
+  })();
+
+  /* ---------- Hover / tap image reveal ---------- */
+  (function(){
+    const names  = document.getElementById('names');
+    const items  = Array.from(names.querySelectorAll('.name'));
+    const cards  = Array.from(document.querySelectorAll('.card'));
+
+    function show(i){
+      cards.forEach((c, idx) => c.classList.toggle('is-visible', idx === i));
+      items.forEach((n, idx) => n.classList.toggle('is-active', idx === i));
+      names.classList.add('is-hovering');
+    }
+    function hideAll(){
+      cards.forEach(c => c.classList.remove('is-visible'));
+      items.forEach(n => n.classList.remove('is-active'));
+      names.classList.remove('is-hovering');
+    }
+
+    items.forEach((name) => {
+      const i = +name.dataset.index;
+      // Desktop hover
+      name.addEventListener('mouseenter', () => show(i));
+      // Keyboard focus
+      name.addEventListener('focus', () => show(i));
+      name.addEventListener('blur', hideAll);
+      // Touch / click toggle (mobile)
+      name.addEventListener('click', (e) => {
+        e.preventDefault();
+        const active = cards[i].classList.contains('is-visible');
+        active ? hideAll() : show(i);
+      });
+    });
+
+    // Leaving the name area hides everything
+    names.addEventListener('mouseleave', hideAll);
+    // Tapping outside the names hides everything (mobile)
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.name')) hideAll();
+    });
+  })();
+
+  /* ---------- Mobile dropdown menu ---------- */
+  (function(){
+    const nav    = document.getElementById('nav');
+    const toggle = document.getElementById('navToggle');
+    const menu   = document.getElementById('navMenu');
+
+    function setOpen(open){
+      nav.classList.toggle('is-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    }
+
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setOpen(!nav.classList.contains('is-open'));
+    });
+    // Close when a link is chosen
+    menu.querySelectorAll('a').forEach(a =>
+      a.addEventListener('click', () => setOpen(false))
+    );
+    // Close on outside click or Escape
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#nav')) setOpen(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+
+  /* ---------- Zoom parallax on scroll ----------
+     Mirrors framer-motion's useScroll (offset start/end) + useTransform.
+     scrollYProgress 0..1 maps each item's scale from 1 to its max.    */
+  (function(){
+    const track = document.getElementById('pzTrack');
+    const items = Array.from(track.querySelectorAll('.pz-item'));
+    const maxScales = [4, 5, 6, 5, 6, 8, 9];      // same targets as the React version
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let current = 0, target = 0;
+
+    function readProgress(){
+      const rect = track.getBoundingClientRect();
+      const dist = rect.height - window.innerHeight;
+      target = dist > 0 ? Math.min(Math.max(-rect.top / dist, 0), 1) : 0;
+    }
+
+    function render(){
+      // ease current toward target for Lenis-like smoothness
+      current += (target - current) * (reduce ? 1 : 0.09);
+      items.forEach((item, i) => {
+        const max = maxScales[i % maxScales.length];
+        const scale = 1 + (max - 1) * current;
+        item.style.transform = 'scale(' + scale.toFixed(4) + ')';
+      });
+      requestAnimationFrame(render);
+    }
+
+    window.addEventListener('scroll', readProgress, { passive:true });
+    window.addEventListener('resize', readProgress);
+    readProgress();
+    requestAnimationFrame(render);
+  })();
+</script>
+</body>
+</html>
